@@ -1,9 +1,6 @@
 locals {
     env = "develop"
-    profect = "platform"
-    role = "db"
+    project = "platform"
+    name_web = "netology-${ local.env }-${ local.project }-web"
+    name_db = "netology-${ local.env }-${ local.project }-db"
 }
-
-netology-develop-platform-db
-
-"netology-${ var.env }-${ var.project }-${ var.role }"

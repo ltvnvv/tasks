@@ -11,5 +11,4 @@ output "vm_info" {
         platform_db_ip = yandex_compute_instance.platform-db.network_interface.0.nat_ip_address
 
     }
-    description = "Details of virtual machines"
 }

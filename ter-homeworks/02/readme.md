@@ -46,6 +46,17 @@ resource "yandex_compute_instance" "platform" {
   resources {...}
 ```
 
-### Задание 3
+### Задание 4
 
-![screenshot](img/3.png)
+Outputs:
+
+vm_info = {
+  "instance_name_platform_db" = "netology-develop-platform-db"
+  "instance_name_platform_db_fqdn" = "epdu5iepuqa1a0bui11l.auto.internal"
+  "instansce_name_platform" = "netology-develop-platform-web"
+  "instansce_name_platform_fqdn" = "fhm3q2t88lh4ptkkip91.auto.internal"
+  "platform_db_ip" = "158.160.19.202"
+  "platform_ip" = "89.169.141.69"
+}
+
+### Задание 5
