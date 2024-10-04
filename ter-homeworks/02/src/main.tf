@@ -15,6 +15,7 @@ resource "yandex_vpc_subnet" "develop-db" {
   v4_cidr_blocks = var.vm_db_cidr
 }
 
+
 data "yandex_compute_image" "ubuntu" {
   family = var.vm_web_image_families
 }
@@ -22,9 +23,9 @@ resource "yandex_compute_instance" "platform" {
   name        = local.name_web
   platform_id = var.vm_web_platform_id
   resources {
-    cores         = 2
-    memory        = 1
-    core_fraction = 20
+    cores         = var.vms_resources.web.cores
+    memory        = var.vms_resources.web.memory
+    core_fraction = var.vms_resources.web.core_fraction 
   }
   boot_disk {
     initialize_params {
@@ -39,10 +40,7 @@ resource "yandex_compute_instance" "platform" {
     nat       = true
   }
 
-  metadata = {
-    serial-port-enable = 1
-    ssh-keys           = "ubuntu:${var.vms_ssh_root_key}"
-  }
+  metadata = var.metadata
 
 }
 
@@ -56,10 +54,11 @@ resource "yandex_compute_instance" "platform-db" {
   zone = var.vm_db_zone
 
   resources {
-    cores         = 2
-    memory        = 2
-    core_fraction = 20
+    cores         = var.vms_resources.db.cores
+    memory        = var.vms_resources.db.memory
+    core_fraction = var.vms_resources.db.core_fraction 
   }
+
   boot_disk {
     initialize_params {
       image_id = data.yandex_compute_image.ubuntu-db.image_id
@@ -73,9 +72,6 @@ resource "yandex_compute_instance" "platform-db" {
     nat       = true
   }
 
-  metadata = {
-    serial-port-enable = 1
-    ssh-keys           = "ubuntu:${var.vms_ssh_root_key}"
-  }
+  metadata = var.metadata
 
 }

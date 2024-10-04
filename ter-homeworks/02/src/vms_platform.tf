@@ -6,11 +6,11 @@ variable "vm_web_image_families" {
   description = "Image OS-families"
 }
 
-variable "vm_web_instance_name" {
-  type        = string
-  default     = "netology-develop-platform-web"
-  description = "Instance name"
-}
+# variable "vm_web_instance_name" {
+#   type        = string
+#   default     = "netology-develop-platform-web"
+#   description = "Instance name"
+# }
 
 variable "vm_web_platform_id" {
   type        = string
@@ -26,11 +26,11 @@ variable "vm_db_image_families" {
   description = "Image OS-families"
 }
 
-variable "vm_db_instance_name" {
-  type        = string
-  default     = "netology-develop-platform-db"
-  description = "Instance name"
-}
+# variable "vm_db_instance_name" {
+#   type        = string
+#   default     = "netology-develop-platform-db"
+#   description = "Instance name"
+# }
 
 variable "vm_db_platform_id" {
   type        = string
