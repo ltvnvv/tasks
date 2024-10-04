@@ -46,8 +46,13 @@ resource "yandex_compute_instance" "platform" {
   resources {...}
 ```
 
+### Задание 3
+
+Добавлен файл vms_platform.tf. В него перенесены переменные VM. По аналогии создан 2 ресурс instance для db.
+
 ### Задание 4
 
+```
 Outputs:
 
 vm_info = {
@@ -58,5 +63,12 @@ vm_info = {
   "platform_db_ip" = "158.160.19.202"
   "platform_ip" = "89.169.141.69"
 }
+```
 
 ### Задание 5
+
+Добавлен файл locals.tf. Переопределены переменные в main.tf
+
+### Задание 6
+
+Добавил map-переменную **vms_resources** и **metadata** в variables.tf и terraform.tfvars. Переопределил их в main.tf.
