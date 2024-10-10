@@ -23,3 +23,38 @@ variable "vm_web_platform_id" {
   default     = "standard-v3"
   description = "Platforms ID"
 }
+
+variable "vms_resources" {
+    type = map(object({
+    cores         = number
+    memory        = number
+    core_fraction = number
+  }))
+  default = {
+    web = {
+        cores=2
+        memory=1
+        core_fraction=20
+    }    
+  }
+}
+
+variable "vms_db_resources" {
+    type = map(object({
+    cores         = number
+    memory        = number
+    core_fraction = number
+  }))
+  default = {
+        main = {
+        cores=4
+        memory=2
+        core_fraction=20
+    },
+    replica = {
+        cores=2
+        memory=1
+        core_fraction=20
+    }
+  }
+}

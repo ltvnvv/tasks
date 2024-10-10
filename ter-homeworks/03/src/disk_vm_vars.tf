@@ -18,6 +18,12 @@ variable "disk_preference" {
 }
 }
 
+variable "disk_name" {
+  type    = string
+  default = "disk"
+  description = "Storage disk name"
+}
+
 variable "storage_vm_name" {
     type = string
     default = "storage"

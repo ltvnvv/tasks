@@ -30,19 +30,3 @@ variable "vpc_name" {
   default     = "develop"
   description = "VPC network&subnet name"
 }
-
-variable "vms_resources" {
-    type = map(object({
-    cores         = number
-    memory        = number
-    core_fraction = number
-  }))
-}
-
-variable "vms_db_resources" {
-    type = map(object({
-    cores         = number
-    memory        = number
-    core_fraction = number
-  }))
-}

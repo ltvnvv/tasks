@@ -1,6 +1,6 @@
 resource "yandex_compute_disk" "storage" {
   count    = var.disk_count
-
+  name     = "${var.disk_name}-${count.index + 1}"
   size     = var.disk_preference.disk1.size
   type     = var.disk_preference.disk1.type
 }
@@ -21,10 +21,10 @@ resource "yandex_compute_instance" "storage_vm" {
     }
   }
 
-  dynamic secondary_disk{
-    for_each = "${yandex_compute_disk.storage.*.id}"
+  dynamic secondary_disk{ 
+    for_each = { for stor in yandex_compute_disk.storage[*]: stor.name=> stor }
    content {
-    disk_id = yandex_compute_disk.storage["${secondary_disk.key}"].id
+    disk_id = secondary_disk.value.id
    }
   }
 
