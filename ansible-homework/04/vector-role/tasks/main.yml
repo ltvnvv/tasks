@@ -1,0 +1,48 @@
+---
+- name: Install archive manager
+  become: true
+  ansible.builtin.yum:
+    name:
+      - tar
+- name: Get vector distrib
+  ansible.builtin.get_url:
+    url: "https://packages.timber.io/vector/{{ vector_version }}/vector-{{ vector_version }}-x86_64-unknown-linux-musl.tar.gz"
+    dest: "./vector-{{ vector_version }}-x86_64-unknown-linux-musl.tar.gz"
+- name: Unpack vector distrib
+  ansible.builtin.unarchive:
+    src: "./vector-{{ vector_version }}-x86_64-unknown-linux-musl.tar.gz"
+    dest: "./"
+    remote_src: true
+- name: Install vector
+  become: true
+  ansible.builtin.copy:
+    src: "vector-x86_64-unknown-linux-musl/bin/vector"
+    dest: "/usr/bin/"
+    remote_src: true
+    mode: 755
+- name: Create vector configuration directory
+  become: true
+  ansible.builtin.file:
+    path: /etc/vector
+    state: directory
+    mode: '0755'
+- name: Create vector data directory
+  become: true
+  ansible.builtin.file:
+    path: /var/lib/vector/
+    state: directory
+    mode: '0755'
+- name: Demonaize vector
+  become: true
+  ansible.builtin.template:
+    src: "templates/vector.service.j2"
+    dest: "/etc/systemd/system/vector.service"
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+    mode: "0644"
+- name: Deploy Vector configuration
+  become: true
+  ansible.builtin.template:
+    src: templates/vector.config.j2
+    dest: /etc/vector/vector.yaml
+  notify: Restart vector service

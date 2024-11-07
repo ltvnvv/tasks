@@ -1,0 +1,51 @@
+---
+- name: Lighthouse | install dependencies
+  become: true
+  ansible.builtin.yum:
+    name: git
+    state: present
+- name: Lighthouse | Copy from git
+  become: true
+  git:
+    repo: "{{ lighthouse_vcs }}"
+    version: master
+    dest: "{{ lighthouse_location }}"
+- name: NGINX | Install epel-release
+  become: true
+  ansible.builtin.yum:
+    name: epel-release
+    state: present
+- name: NGINX | Install NGINX
+  become: true
+  ansible.builtin.yum:
+    name: nginx
+    state: present
+  notify: start-nginx
+- name: NGINX | create nginx site dir
+  become: true
+  ansible.builtin.file:
+    mode: "755"
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+    path: "/var/www"
+    state: "directory"
+- name: NGINX | create nginx log dir
+  become: true
+  ansible.builtin.file:
+    mode: "755"
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+    path: "/var/log/nginx"
+    state: "directory"
+- name: NGINX | nginx template config
+  become: true
+  ansible.builtin.template:
+    src: "templates/nginx.conf.j2"
+    dest: "/etc/nginx/nginx.conf"
+    mode: "755"
+- name: lighthouse | nginx lighthouse config
+  become: true
+  ansible.builtin.template:
+    src: "templates/nginx.lighthouse.conf.j2"
+    dest: "/etc/nginx/conf.d/lighthouse.conf"
+    mode: "755"
