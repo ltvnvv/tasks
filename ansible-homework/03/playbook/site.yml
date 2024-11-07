@@ -1,0 +1,167 @@
+---
+- name: Install Lighthouse
+  hosts: lighthouse
+  handlers:
+    - name: reload-nginx
+      become: true
+      command: nginx -s reload
+  pre_tasks:
+    - name: Lighthouse | install dependencies
+      become: true
+      ansible.builtin.yum:
+        name: git
+        state: present
+  tasks:
+    - name: Lighthouse | Copy from git
+      become: true
+      git:
+        repo: "{{ lighthouse_vcs }}"
+        version: master
+        dest: "{{ lighthouse_location }}"
+
+- name: Install nginx
+  hosts: lighthouse
+  handlers:
+    - name: start-nginx
+      become: true
+      command: nginx
+    - name: reload-nginx
+      become: true
+      command: nginx -s reload
+  tasks:
+    - name: NGINX | Install epel-release
+      become: true
+      ansible.builtin.yum:
+        name: epel-release
+        state: present
+    - name: NGINX | Install NGINX
+      become: true
+      ansible.builtin.yum:
+        name: nginx
+        state: present
+      notify: start-nginx
+    - name: NGINX | create nginx site dir
+      become: true
+      ansible.builtin.file:
+        mode: "755"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_gid }}"
+        path: "/var/www"
+        state: "directory"
+    - name: NGINX | create nginx log dir
+      become: true
+      ansible.builtin.file:
+        mode: "755"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_gid }}"
+        path: "/var/log/nginx"
+        state: "directory"
+    - name: NGINX | nginx template config
+      become: true
+      ansible.builtin.template:
+        src: "templates/nginx.conf.j2"
+        dest: "/etc/nginx/nginx.conf"
+        mode: "755"
+    - name: lighthouse | nginx lighthouse config
+      become: true
+      ansible.builtin.template:
+        src: "templates/nginx.lighthouse.conf.j2"
+        dest: "/etc/nginx/conf.d/lighthouse.conf"
+        mode: "755"
+
+- name: Install Clickhouse
+  hosts: clickhouse
+  handlers:
+    - name: Start clickhouse service
+      become: true
+      ansible.builtin.service:
+        name: clickhouse-server
+        state: restarted
+  tasks:
+    - block:
+        - name: Get clickhouse distrib
+          ansible.builtin.get_url:
+            url: "https://packages.clickhouse.com/rpm/stable/{{ item }}-{{ clickhouse_version }}.noarch.rpm"
+            dest: "./{{ item }}-{{ clickhouse_version }}.rpm"
+          with_items: "{{ clickhouse_packages }}"
+      rescue:
+        - name: Get clickhouse distrib
+          ansible.builtin.get_url:
+            url: "https://packages.clickhouse.com/rpm/stable/clickhouse-common-static-{{ clickhouse_version }}.x86_64.rpm"
+            dest: "./clickhouse-common-static-{{ clickhouse_version }}.rpm"
+    - name: Install clickhouse packages
+      become: true
+      ansible.builtin.yum:
+        name:
+          - clickhouse-common-static-{{ clickhouse_version }}.rpm
+          - clickhouse-client-{{ clickhouse_version }}.rpm
+          - clickhouse-server-{{ clickhouse_version }}.rpm
+      notify: Start clickhouse service
+    - name: Flush handlers
+      meta: flush_handlers
+    - name: Create database
+      ansible.builtin.command: "clickhouse-client -q 'create database logs;'"
+      register: create_db
+      failed_when: create_db.rc != 0 and create_db.rc !=82
+      changed_when: create_db.rc == 0
+  tags:
+    - clickhouse
+
+- name: Install Vector
+  hosts: vector
+  handlers:
+    - name: Restart vector service
+      become: true
+      ansible.builtin.service:
+        name: vector
+        state: restarted
+  tasks:
+    - name: Install archive manager
+      become: true
+      ansible.builtin.yum:
+        name:
+          - tar
+    - name: Get vector distrib
+      ansible.builtin.get_url:
+        url: "https://packages.timber.io/vector/{{ vector_version }}/vector-{{ vector_version }}-x86_64-unknown-linux-musl.tar.gz"
+        dest: "./vector-{{ vector_version }}-x86_64-unknown-linux-musl.tar.gz"
+    - name: Unpack vector distrib
+      ansible.builtin.unarchive:
+        src: "./vector-{{ vector_version }}-x86_64-unknown-linux-musl.tar.gz"
+        dest: "./"
+        remote_src: true
+    - name: Install vector
+      become: true
+      ansible.builtin.copy:
+        src: "vector-x86_64-unknown-linux-musl/bin/vector"
+        dest: "/usr/bin/"
+        remote_src: true
+        mode: 755
+    - name: Create vector configuration directory
+      become: true
+      ansible.builtin.file:
+        path: /etc/vector
+        state: directory
+        mode: '0755'
+    - name: Create vector data directory
+      become: true
+      ansible.builtin.file:
+        path: /var/lib/vector/
+        state: directory
+        mode: '0755'
+    - name: Demonaize vector
+      become: true
+      ansible.builtin.template:
+        src: "templates/vector.service.j2"
+        dest: "/etc/systemd/system/vector.service"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_gid }}"
+        mode: "0644"
+    - name: Deploy Vector configuration
+      become: true
+      ansible.builtin.template:
+        src: templates/vector.config.j2
+        dest: /etc/vector/vector.yaml
+      notify: Restart vector service
+  tags:
+    - vector
