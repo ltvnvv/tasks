@@ -1,0 +1,6 @@
+release_version: snapshot
+image:
+  name: 
+    nginx: nginx
+  tag:
+    nginx: latest
