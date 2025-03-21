@@ -1,0 +1,24 @@
+#cloud-config
+write_files:
+  - content: |
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <title>Terraform</title>
+        </head>
+        <body>
+          <h1>Terraform</h1>
+          <div>
+            <img
+              src="https://lv-20250321.storage.yandexcloud.net/terraform-logo"
+              style="max-height: 600px"
+            />
+          </div>
+         </body>
+      </html>
+    path: "/var/www/html/index2.html"
+    owner: root:root
+    permissions: 0o664
+runcmd:
+  - mkdir /run/mydir
