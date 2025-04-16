@@ -1,0 +1,81 @@
+name: Release myapp
+
+on: 
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+
+  release_env:
+    runs-on: myrunner
+    outputs:
+      image_tag: ${{ steps.tag.outputs.image_tag }}
+
+    steps:
+      - id: tag
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            echo "image_tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "image_tag=latest"  >> $GITHUB_OUTPUT
+          fi
+
+  build:
+    needs: release_env
+    runs-on: myrunner
+    
+    steps:
+
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Build image
+        run: |
+          echo "Building with tag: ${{ needs.release_env.outputs.image_tag }}"
+          docker build -t ${{ vars.IMAGE_NAME }}:${{ needs.release_env.outputs.image_tag }} -f .docker/Dockerfile .
+
+  publish:
+    needs: [release_env, build]
+    runs-on: myrunner
+
+    steps:
+
+      - name: Login to the registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Publish image
+        run: |
+          docker push ${{ vars.IMAGE_NAME }}:${{ needs.release_env.outputs.image_tag }}
+
+  deploy:
+    needs: [release_env, build, publish]
+    runs-on: myrunner
+
+    steps:
+
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+          version: 'v1.31.0'
+
+    - name: Configure Kubernetes
+      uses: azure/k8s-set-context@v3
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBE_CONFIG }}
+
+    - name: Substitute variables
+      env:
+        IMAGE_TAG: ${{ needs.release_env.outputs.image_tag }}
+      run: |
+        envsubst < $GITHUB_WORKSPACE/k8s/deployment.yml > $GITHUB_WORKSPACE/k8s/deployment-release.yaml
+        cat $GITHUB_WORKSPACE/k8s/deployment-release.yaml
+
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl apply -f $GITHUB_WORKSPACE/k8s/deployment-release.yaml
+        kubectl rollout status deployment/myapp
